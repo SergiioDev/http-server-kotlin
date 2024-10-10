@@ -1,16 +1,12 @@
 import java.net.ServerSocket;
 
-fun main() {
-    // You can use print statements as follows for debugging, they'll be visible when running tests.
-    println("Logs from your program will appear here!")
+private const val SERVER_PORT = 4221
 
-    // Uncomment this block to pass the first stage
-    // var serverSocket = ServerSocket(4221)
-    //
-    // // Since the tester restarts your program quite often, setting SO_REUSEADDR
-    // // ensures that we don't run into 'Address already in use' errors
-    // serverSocket.reuseAddress = true
-    //
-    // serverSocket.accept() // Wait for connection from client.
-    // println("accepted new connection")
+fun main() {
+    val serverSocket = ServerSocket(SERVER_PORT)
+    println("Server running on port $SERVER_PORT")
+
+    val client = serverSocket.accept()
+    client.getOutputStream().write("HTTP/1.1 200 OK\r\n\r\n".toByteArray())
+    println("accepted new connection")
 }
