@@ -1,3 +1,4 @@
+import org.slf4j.LoggerFactory
 import model.Request
 import model.Response
 import util.Constants.HEADER_SPLIT_CONDITION
@@ -7,9 +8,10 @@ import java.net.Socket
 class ConnectionHandler(clientSocket: Socket) {
     private val input = clientSocket.getInputStream().bufferedReader()
     private val output = clientSocket.getOutputStream()
+    private val logger = LoggerFactory.getLogger(ConnectionHandler::class.java)
 
     fun handle(){
-        println("Handling request...")
+        logger.info("Handling request...")
         var line = input.readLine()
         val requestLines = mutableListOf<String>()
 
@@ -22,7 +24,7 @@ class ConnectionHandler(clientSocket: Socket) {
         val response = HttpServer.handle(request)
 
         val responseData = parseResponse(response)
-        println("Answering: $response")
+        logger.info("Answering: $response")
         output.write(responseData.toByteArray())
         output.flush()
         output.close()
