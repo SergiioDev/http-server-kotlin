@@ -1,9 +1,8 @@
-import model.HttpStatus
+import model.Request
 import model.Response
+import util.Constants.HEADER_SPLIT_CONDITION
+import util.Constants.HTTP_VERSION
 import java.net.Socket
-
-private const val ROOT_PATH = "/"
-private val ECHO_PATH_REGEX = "/echo/.*".toRegex()
 
 class ConnectionHandler(clientSocket: Socket) {
     private val input = clientSocket.getInputStream().bufferedReader()
@@ -19,53 +18,33 @@ class ConnectionHandler(clientSocket: Socket) {
             line = input.readLine()
         }
 
-        val response = parseRequest(requestLines)
+        val request = parseRequest(requestLines)
+        val response = HttpServer.handle(request)
 
-        val responseData = buildString {
-            append("HTTP/1.1 ${response.status.code} ${response.status.message}\r\n")
-            response.headers.forEach{ (key, v) ->
-                append("$key: $v\r\n")
-            }
-            append("\r\n")
-            append(response.body)
-        }
+        val responseData = parseResponse(response)
         println("Answering: $response")
         output.write(responseData.toByteArray())
         output.flush()
         output.close()
     }
 
-    private fun parseRequest(requestLines: List<String>): Response {
+    private fun parseResponse(response: Response) =
+        buildString {
+            append("$HTTP_VERSION ${response.status.code} ${response.status.message}\r\n")
+            response.headers.forEach { (key, v) ->
+                append("$key: $v\r\n")
+            }
+            append("\r\n")
+            append(response.body)
+        }
+
+    private fun parseRequest(requestLines: List<String>): Request {
         val parts = requestLines[0].split(" ")
         val path = parts[1]
+        val headers = requestLines.drop(1).takeWhile { it.contains(HEADER_SPLIT_CONDITION) }
+            .map { it.split(HEADER_SPLIT_CONDITION) }
+            .associate { it[0] to it[1] }
 
-        val headers = mutableMapOf<String, String>()
-        return when {
-            path == ROOT_PATH -> {
-                Response(
-                    path = path,
-                    status = HttpStatus.OK,
-                    body = null,
-                    headers = headers
-                )
-            }
-            ECHO_PATH_REGEX.matches(path)-> {
-                val responseBody = path.split("/")[2]
-                headers["Content-Length"] = responseBody.length.toString()
-                headers["Content-Type"] = "text/plain"
-                Response(
-                    path = path,
-                    status = HttpStatus.OK,
-                    body = responseBody,
-                    headers = headers
-                )
-            }
-            else -> Response(
-                path = path,
-                status = HttpStatus.NOT_FOUND,
-                body = null,
-                headers = headers
-            )
-        }
+        return Request(path = path, body = null, headers = headers)
     }
 }
