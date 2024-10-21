@@ -5,7 +5,7 @@ import util.Constants.HEADER_SPLIT_CONDITION
 import util.Constants.HTTP_VERSION
 import java.net.Socket
 
-class ConnectionHandler(clientSocket: Socket) {
+class ConnectionHandler(clientSocket: Socket, private val fileDirectory: String?) {
     private val input = clientSocket.getInputStream().bufferedReader()
     private val output = clientSocket.getOutputStream()
     private val logger = LoggerFactory.getLogger(ConnectionHandler::class.java)
@@ -21,7 +21,7 @@ class ConnectionHandler(clientSocket: Socket) {
         }
 
         val request = parseRequest(requestLines)
-        val response = HttpServer.handle(request)
+        val response = HttpServer.handle(request, fileDirectory = fileDirectory)
 
         val responseData = parseResponse(response)
         logger.info("Answering: $response")
